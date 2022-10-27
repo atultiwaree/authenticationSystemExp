@@ -13,7 +13,7 @@ const verifyToken = (req, res, next) => {
       next();
     });
   } else {
-    res.send("Wrong hash").status(400);
+    res.send("Empty token").status(400);
   }
 };
 

@@ -18,39 +18,53 @@ app.get("/", (req, res) => {
 const userData = [];
 
 app.post("/register", upload.single("photo"), (req, res) => {
-  const username = req.body.username;
-  const name = req.body.name;
-  const profile = req.file.path;
-  const age = req.body.age;
-  const pass = genHash(req.body.pass); //Hashed pass
+  if (userData.findIndex((x) => x.username === req.body.username) >= 0)
+    return res.json({ success: false, msg: "User already exist" }).status(400);
+
+  const sumData = {
+    ...req.body,
+    profile: req.file.path,
+    pass: genHash(req.body.pass),
+    id: userData.length + 1,
+  };
+  const { username, name, profile, age, pass, id } = sumData;
   userData.push({
-    //Pushed to array
-    created: true,
-    username: username,
-    name: name,
-    photo: profile,
-    age: age,
-    pass: pass,
+    name,
+    username,
+    profile,
+    age,
+    pass,
+    id,
   });
   res.send(userData); //Sending user array
 });
 
 app.post("/login", (req, res) => {
-  const username = req.body.username;
-  const password = req.body.pass;
-  if (userData[0].username === username) {
-    if (verifyPass(password, userData[0].pass)) {
-      //After verification of username and password generating token
-      const name = userData[0].name;
-      const age = userData[0].age;
-      const photo = userData[0].photo;
-      const token = genTok({ name: name, age: age, photo: photo });
-      res.json({ accessToken: token }).status(200);
+  const getInVar = ["username", "pass"];
+  for (const elt of getInVar) {
+    if (!req.body[elt]) return res.send(`Must provide ${elt}`).status(400);
+  }
+  const { username, pass } = req.body;
+  const index = userData.findIndex((x) => x.username === username);
+
+  if (index >= 0) {
+    if (verifyPass(pass, userData[index].pass)) {
+      return res
+        .json({ passToken: genTok({ id: userData[index].id }) })
+        .status(200);
+    } else {
+      return res
+        .json({ success: false, msg: "Password is incorrect" })
+        .status(400);
     }
   } else {
-    res.send("not correct...").status(401);
+    return res
+      .json({ success: false, msg: "Username is incorrect" })
+      .status(400);
   }
 });
+
+//Iske header auth lagana baki hai
 
 app.get("/profile", verifyToken, (req, res) => {
   res.status(200);
