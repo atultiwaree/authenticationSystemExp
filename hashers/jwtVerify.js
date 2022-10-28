@@ -4,16 +4,16 @@ const dotenv = require("dotenv").config();
 const verifyToken = (req, res, next) => {
   const token = req.headers.token;
   if (token) {
-    const stringToken = String(process.env.SECRET_TOKEN);
-    jwt.verify(token, stringToken, (err, data) => {
-      if (err) return res.status(403);
+    jwt.verify(token, process.env.SECRET_TOKEN, (err, data) => {
+      if (err)
+        return res.status(403).json({ success: false, res: "Invalid Token!" });
 
-      res.json({ data: data }).status(200);
+      res.locals.userId = data.id;
 
       next();
     });
   } else {
-    res.send("Empty token").status(400);
+    return res.json({ success: false, res: "No token found!" }).status(400);
   }
 };
 
